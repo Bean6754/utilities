@@ -1,3 +1,9 @@
+rem **************************************************************************
+rem ** Copyright (c) Microsoft Open Technologies, Inc.  All rights reserved.  
+rem ** Licensed under the BSD 2-Clause License.  
+rem ** See License.txt in the project root for license information.
+rem **************************************************************************
+
 @echo off
 rem **************************************************************************
 rem ** apply-BootMedia.cmd
