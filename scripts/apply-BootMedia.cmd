@@ -1,10 +1,10 @@
+@echo off
 rem **************************************************************************
 rem ** Copyright (c) Microsoft Open Technologies, Inc.  All rights reserved.  
 rem ** Licensed under the BSD 2-Clause License.  
 rem ** See License.txt in the project root for license information.
 rem **************************************************************************
 
-@echo off
 rem **************************************************************************
 rem ** apply-BootMedia.cmd
 rem **************************************************************************
@@ -31,8 +31,9 @@ rem **************************************************************************
     rem ** We need to create the image in context of 'Pacific Standard Time'
     rem **********************************************************************
 
-    echo %infoPrefix% Temporary changing time zone to 'Pacific Standard Time'
-    echo %infoPrefix% Fat32 is local time based, and the images are created in a pacific time zone. If there is a mismatch Windows will bug check after 5 minutes.
+    echo %infoPrefix% Temporarily changing time zone to 'Pacific Standard Time'
+    rem %infoPrefix% Fat32 is local time based, and the images are created in a pacific time zone.
+    rem %infoPrefix% If there is a mismatch Windows will bug check after 5 minutes.
     set originalTimeZone=
     call :GetCurrentTimeZone originalTimeZone
     if errorlevel 1 (
@@ -68,7 +69,8 @@ rem **************************************************************************
     rem **********************************************************************
     rem ** Process arguments
     rem **********************************************************************
-
+    echo.
+    echo %infoPrefix% Processing Arguments
     call :ProcessArgList %1 %2 %3 %4 %5 %6 %7 %8 %9
     if errorlevel 1 (
         set /a status=-1
@@ -79,6 +81,10 @@ rem **************************************************************************
     rem ** Validate image filename
     rem **********************************************************************
 
+    echo.
+    echo %infoPrefix% Validating image filename
+    echo %infoPrefix% This will fail if your path to the wim contains spaces.
+    echo %infoPrefix% The error will contain "was unexpected at this time"
     if '%sourceImage%' == '' (
         call :GetLatestFile "%kitFolder%" *.WIM sourceImage
         if errorlevel 1 (
@@ -87,18 +93,20 @@ rem **************************************************************************
             goto %cleanExit%
         )
     )
-
+    
     call :ExpandPath "%sourceImage%" sourceImage
     if not exist "%sourceImage%" (
         echo %errorPrefix% Cannot find/access the image specified. [%sourceImage%]
         set /a status=-1
         goto %cleanExit%
     )
-
+    
     rem **********************************************************************
     rem ** Validate destination folder
     rem **********************************************************************
 
+    echo.
+    echo %infoPrefix% Validating destination folder
     call :ExpandPath "%applyFolder%" applyFolder
     call :NormalizeFilename "%applyFolder%" applyFolder
     if '%applyFolder%' == '' (
@@ -364,6 +372,7 @@ rem **************************************************************************
     goto :ProcessArgList
 
 :processArgImage
+    echo Processing Image Argument
     shift
     if '%1' == '' (
         echo %errorPrefix% Path to valid Windows build must be specified after '-image'.
@@ -376,6 +385,7 @@ rem **************************************************************************
     goto :processArgListNext
 
 :processArgDestination
+    echo Processing Destination Argument
     shift
     if '%1' == '' (
         echo %errorPrefix% Destination of the target image must be specified after '-destination'.
@@ -389,6 +399,7 @@ rem **************************************************************************
     goto :processArgListNext
 
 :processArgHostname
+    echo Processing Hostname Argument
     shift
     if '%1' == '' (
         echo %errorPrefix% Hostname must be specified after '-hostname'.
@@ -399,6 +410,7 @@ rem **************************************************************************
     goto :processArgListNext
 
 :processArgPassword
+    echo Processing Password Argument
     shift
     if '%1' == '' (
         echo %errorPrefix% Desired password must be specified after '-password'.
