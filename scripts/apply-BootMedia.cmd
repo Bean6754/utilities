@@ -13,6 +13,7 @@ rem **************************************************************************
     echo.
 
     set infoPrefix=****
+    set dism="%SystemRoot%\System32\Dism.exe"
     set errorPrefix=%infoPrefix% ERROR:
 
     rem **********************************************************************
@@ -32,8 +33,8 @@ rem **************************************************************************
     rem **********************************************************************
 
     echo %infoPrefix% Temporarily changing time zone to 'Pacific Standard Time'
-    rem %infoPrefix% Fat32 is local time based, and the images are created in a pacific time zone.
-    rem %infoPrefix% If there is a mismatch Windows will bug check after 5 minutes.
+    rem %infoPrefix% Fat32 is local time based, and the images are created in a pacific time zone. 
+    rem %infoPrefix% If there is a mismatch Windows will bug check after 5 minutes.    
     set originalTimeZone=
     call :GetCurrentTimeZone originalTimeZone
     if errorlevel 1 (
@@ -60,6 +61,11 @@ rem **************************************************************************
         goto %cleanExit%
     )
 
+    if exist "%ProgramFiles(x86)%\Windows Kits\8.1\Assessment and Deployment Kit\Deployment Tools\amd64\DISM\Dism.exe" (
+    	set dism="%ProgramFiles(x86)%\Windows Kits\8.1\Assessment and Deployment Kit\Deployment Tools\amd64\DISM\Dism.exe"
+    )
+
+
     set instance=%RANDOM%
     set adminPassword=p%RANDOM%
     set sourceImage=
@@ -71,6 +77,7 @@ rem **************************************************************************
     rem **********************************************************************
     echo.
     echo %infoPrefix% Processing Arguments
+
     call :ProcessArgList %1 %2 %3 %4 %5 %6 %7 %8 %9
     if errorlevel 1 (
         set /a status=-1
@@ -81,11 +88,7 @@ rem **************************************************************************
     rem ** Validate image filename
     rem **********************************************************************
 
-    echo.
-    echo %infoPrefix% Validating image filename
-    echo %infoPrefix% This will fail if your path to the wim contains spaces.
-    echo %infoPrefix% The error will contain "was unexpected at this time"
-    if '%sourceImage%' == '' (
+    if "%sourceImage%" == "" (
         call :GetLatestFile "%kitFolder%" *.WIM sourceImage
         if errorlevel 1 (
             echo %errorPrefix% Image must be specified or exist in script folder. [%kitFolder%]
@@ -93,20 +96,18 @@ rem **************************************************************************
             goto %cleanExit%
         )
     )
-    
+
     call :ExpandPath "%sourceImage%" sourceImage
     if not exist "%sourceImage%" (
         echo %errorPrefix% Cannot find/access the image specified. [%sourceImage%]
         set /a status=-1
         goto %cleanExit%
     )
-    
+
     rem **********************************************************************
     rem ** Validate destination folder
     rem **********************************************************************
 
-    echo.
-    echo %infoPrefix% Validating destination folder
     call :ExpandPath "%applyFolder%" applyFolder
     call :NormalizeFilename "%applyFolder%" applyFolder
     if '%applyFolder%' == '' (
@@ -175,7 +176,7 @@ rem **************************************************************************
         goto %cleanExit%
     )
 
-    "%SystemRoot%\System32\Dism.exe" /Mount-Image /ImageFile:"%workFolder%\%workImage%" /MountDir:"%workFolder%\%workImage%.mount"\ /index:1
+    %dism% /Mount-Image /ImageFile:"%workFolder%\%workImage%" /MountDir:"%workFolder%\%workImage%.mount"\ /index:1
     if not !errorlevel! == 0 (
         echo %errorPrefix% Failed to mount image %workFolder%\%workImage%
         echo %errorPrefix%                    to %workFolder%\%workImage%.mount
@@ -187,7 +188,7 @@ rem **************************************************************************
     if errorlevel 1 (
         echo %errorPrefix% Failed to customize image %workFolder%\%workImage%
         echo %errorPrefix%                mounted at %workFolder%\%workImage%.mount
-        "%SystemRoot%\System32\Dism.exe" /Unmount-Image /MountDir:"%workFolder%\%workImage%.mount"\ /discard
+        %dism% /Unmount-Image /MountDir:"%workFolder%\%workImage%.mount"\ /discard
         if not !errorlevel! == 0 (
             echo %errorPrefix% Failed to unmount '%workFolder%\%workImage%.mount'. You may have to do it manually...
         )
@@ -195,7 +196,7 @@ rem **************************************************************************
         goto %cleanExit%
     )
 
-    "%SystemRoot%\System32\Dism.exe" /Unmount-Image /MountDir:"%workFolder%\%workImage%.mount"\ /commit
+    %dism% /Unmount-Image /MountDir:"%workFolder%\%workImage%.mount"\ /commit
     if not !errorlevel! == 0 (
         echo %errorPrefix% Failed to unmount '%workFolder%\%workImage%.mount'. You may have to do it manually...
         set /a status=-1
@@ -209,7 +210,7 @@ rem **************************************************************************
     echo %infoPrefix% Applying image %workFolder%\%workImage%
     echo %infoPrefix%             to %applyFolder%
 
-    "%SystemRoot%\System32\Dism.exe" /Apply-Image /ImageFile:"%workFolder%\%workImage%" /Index:1 /ApplyDir:%applyFolder%
+    %dism% /Apply-Image /ImageFile:"%workFolder%\%workImage%" /Index:1 /ApplyDir:%applyFolder%
     if not !errorlevel! == 0 (
         echo %errorPrefix% Failed to apply image %workFolder%\%workImage%
         echo %errorPrefix%             to folder %applyFolder%
@@ -372,7 +373,6 @@ rem **************************************************************************
     goto :ProcessArgList
 
 :processArgImage
-    echo Processing Image Argument
     shift
     if '%1' == '' (
         echo %errorPrefix% Path to valid Windows build must be specified after '-image'.
@@ -385,7 +385,6 @@ rem **************************************************************************
     goto :processArgListNext
 
 :processArgDestination
-    echo Processing Destination Argument
     shift
     if '%1' == '' (
         echo %errorPrefix% Destination of the target image must be specified after '-destination'.
@@ -399,7 +398,6 @@ rem **************************************************************************
     goto :processArgListNext
 
 :processArgHostname
-    echo Processing Hostname Argument
     shift
     if '%1' == '' (
         echo %errorPrefix% Hostname must be specified after '-hostname'.
@@ -410,7 +408,6 @@ rem **************************************************************************
     goto :processArgListNext
 
 :processArgPassword
-    echo Processing Password Argument
     shift
     if '%1' == '' (
         echo %errorPrefix% Desired password must be specified after '-password'.
@@ -438,7 +435,7 @@ rem **********************************************************************
         exit /b 1
     )
 
-    "%SystemRoot%\System32\Dism.exe" /Image:"%workFolder%\%workImage%.mount"\ /Set-TimeZone:"%timeZone%" > nul
+    %dism% /Image:"%workFolder%\%workImage%.mount"\ /Set-TimeZone:"%timeZone%" > nul
     if not !errorlevel! == 0 (
         echo %errorPrefix% Failed to set Time Zone '%timeZone'
         echo %errorPrefix%    for image mounted at %workFolder%\%workImage%.mount
