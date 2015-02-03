@@ -14,6 +14,7 @@ rem **************************************************************************
 
     set infoPrefix=****
     set dism="%SystemRoot%\System32\Dism.exe"
+    set tzutil="%SystemRoot%\System32\tzutil.exe"
     set errorPrefix=%infoPrefix% ERROR:
 
     rem **********************************************************************
@@ -42,7 +43,7 @@ rem **************************************************************************
         set /a status=-1
         goto %cleanExit%
     )
-    tzutil.exe /s "Pacific Standard Time"
+    %tzutil% /s "Pacific Standard Time"
     if errorlevel 1 (
         echo %errorPrefix% Failed to set current Time Zone to 'Pacific Standard Time'.
         set /a status=-1
@@ -287,7 +288,7 @@ rem **************************************************************************
 
 :restoreTimeZoneAndExit
     echo %infoPrefix% Restoring time zone to '%originalTimeZone%'
-    tzutil.exe /s "%originalTimeZone%"
+    %tzutil% /s "%originalTimeZone%"
     if errorlevel 1 (
         echo %errorPrefix% Failed to restore Time Zone to '%originalTimeZone%'. You may have to do it manually...
     )
@@ -526,7 +527,7 @@ rem **  %1 - name of the variable to return the descriptor
 rem **************************************************************************
 
 :GetCurrentTimeZone
-    for /F "delims= usebackq" %%i in (`tzutil.exe /g`) do (
+    for /F "delims= usebackq" %%i in (`%tzutil% /g`) do (
         if not '%%i'=='' (
             set %1=%%i
             exit /b 0
